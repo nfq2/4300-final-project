@@ -69,7 +69,7 @@ def initialize_vectorization():
         for token in set(doc_tokens):
             doc_freq[token] += 1
 
-    max_features = 5000
+    max_features = 10
     doc_count = len(hotels_df)
     sorted_terms = sorted(doc_freq.items(), key=lambda x: x[1], reverse=True)
     if max_features > 0 and max_features < len(sorted_terms):
