@@ -2,11 +2,9 @@ import json
 import os
 import re
 import numpy as np
-import math
-from collections import Counter
+from collections import Counter, defaultdict
 from flask import Flask, render_template, request
 from flask_cors import CORS
-from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 import pandas as pd
 
 # Set up ROOT_PATH relative to the project
@@ -45,15 +43,13 @@ def preprocess_text(text):
 
 def tokenize(text):
     words = text.split()
-    return [word for word in words if word not in STOPWORDS and len(word) > 1]
+    return {word for word in words if word not in STOPWORDS and len(word) > 1}
 
-# Global variables for vectorization
-vocabulary = {}
-idf_values = {}
-hotel_vectors = None
+# Global variables for hotel tokens
+hotel_tokens = []
 
-def initialize_vectorization():
-    global vocabulary, idf_values, hotel_vectors, hotels_df
+def initialize_hotel_tokens():
+    global hotel_tokens, hotels_df
     # Create a combined text column from different fields
     hotels_df['combined_text'] = ''
     if 'Description' in hotels_df.columns:
@@ -63,70 +59,39 @@ def initialize_vectorization():
     if 'Attractions' in hotels_df.columns:
         hotels_df['combined_text'] += ' ' + hotels_df['Attractions'].fillna('').apply(preprocess_text)
     
-    tokenized_docs = [tokenize(doc) for doc in hotels_df['combined_text']]
-    doc_freq = Counter()
-    for doc_tokens in tokenized_docs:
-        for token in set(doc_tokens):
-            doc_freq[token] += 1
-
-    max_features = 5000
-    doc_count = len(hotels_df)
-    sorted_terms = sorted(doc_freq.items(), key=lambda x: x[1], reverse=True)
-    if max_features > 0 and max_features < len(sorted_terms):
-        sorted_terms = sorted_terms[:max_features]
-    vocabulary = {term: idx for idx, (term, _) in enumerate(sorted_terms)}
+    # Tokenize each hotel's text into a set of unique tokens
+    hotel_tokens = [tokenize(doc) for doc in hotels_df['combined_text']]
     
-    # Compute idf values
-    idf_values = {}
-    for term, df in doc_freq.items():
-        if term in vocabulary:
-            idf_values[term] = math.log((doc_count + 1) / (df + 1)) + 1
+    print(f"Tokenized {len(hotels_df)} hotels")
 
-    # Compute tf-idf vectors for each hotel
-    hotel_vectors = np.zeros((len(hotels_df), len(vocabulary)))
-    for doc_idx, doc_tokens in enumerate(tokenized_docs):
-        term_freq = Counter(doc_tokens)
-        doc_length = len(doc_tokens)
-        if doc_length == 0:
-            continue
-        for term, freq in term_freq.items():
-            if term in vocabulary:
-                term_idx = vocabulary[term]
-                tf = freq / doc_length
-                hotel_vectors[doc_idx, term_idx] = tf * idf_values.get(term, 0)
+def jaccard_similarity(set_a, set_b):
+    """Calculate Jaccard similarity between two sets."""
+    if not set_a or not set_b:
+        return 0.0
     
-    print(f"Initialized vectors for {len(hotels_df)} hotels with {len(vocabulary)} features")
-
-def create_query_vector(query_text):
-    processed_query = preprocess_text(query_text)
-    query_tokens = tokenize(processed_query)
-    term_freq = Counter(query_tokens)
-    query_length = len(query_tokens)
-    query_vector = np.zeros(len(vocabulary))
-    if query_length == 0:
-        return query_vector
-    for term, freq in term_freq.items():
-        if term in vocabulary:
-            term_idx = vocabulary[term]
-            tf = freq / query_length
-            query_vector[term_idx] = tf * idf_values.get(term, 0)
-    return query_vector
-
-def compute_cosine_similarity(vec_a, matrix_b):
-    dot_products = np.dot(matrix_b, vec_a)
-    magnitude_a = np.sqrt(np.sum(vec_a**2))
-    magnitudes_b = np.sqrt(np.sum(matrix_b**2, axis=1))
-    magnitudes_b[magnitudes_b == 0] = 1
-    if magnitude_a == 0:
-        magnitude_a = 1
-    return dot_products / (magnitudes_b * magnitude_a)
+    intersection = len(set_a.intersection(set_b))
+    union = len(set_a.union(set_b))
+    
+    if union == 0:
+        return 0.0
+        
+    return intersection / union
 
 def json_search(query, top_n=10):
-    if hotel_vectors is None or not query:
+    if not hotel_tokens or not query:
         return '[]'
     try:
-        query_vector = create_query_vector(query)
-        similarity_scores = compute_cosine_similarity(query_vector, hotel_vectors)
+        # Process the query
+        processed_query = preprocess_text(query)
+        query_tokens = tokenize(processed_query)
+        
+        # Calculate Jaccard similarity between query and each hotel
+        similarity_scores = []
+        for idx, hotel_token_set in enumerate(hotel_tokens):
+            score = jaccard_similarity(query_tokens, hotel_token_set)
+            similarity_scores.append(score)
+        
+        # Add similarity scores to results dataframe
         results_df = hotels_df.copy()
         results_df['similarity_score'] = similarity_scores
         results_df = results_df.sort_values('similarity_score', ascending=False)
@@ -145,20 +110,15 @@ def json_search(query, top_n=10):
 app = Flask(__name__)
 CORS(app)
 
-# Run initialization once before the first request
-# @app.before_first_request
-# def startup():
-#     initialize_vectorization()
-
 @app.route("/")
 def home():
     return render_template('base.html', title="sample html")
 
 @app.route("/hotels", methods=['GET'])
 def hotels_search():
-    app.logger.info("hello1")
-    initialize_vectorization()
-    app.logger.info("hello2")
+    app.logger.info("Initializing hotel tokens")
+    initialize_hotel_tokens()
+    app.logger.info("Processing search request")
     text = request.args.get("query", "")
     return json_search(text)
 
