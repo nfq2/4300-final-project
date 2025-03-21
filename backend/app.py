@@ -156,6 +156,9 @@ def home():
 
 @app.route("/hotels", methods=['GET'])
 def hotels_search():
+    print("debug1")
+    initialize_vectorization()
+    print("debug2")
     text = request.args.get("query", "")
     return json_search(text)
 
@@ -169,5 +172,4 @@ def ping():
     return "pong"
 
 if 'DB_NAME' not in os.environ:
-    initialize_vectorization()
     app.run(debug=True,host="0.0.0.0",port=5000)
