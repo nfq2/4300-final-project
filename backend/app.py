@@ -146,9 +146,9 @@ app = Flask(__name__)
 CORS(app)
 
 # Run initialization once before the first request
-@app.before_first_request
-def startup():
-    initialize_vectorization()
+# @app.before_first_request
+# def startup():
+#     initialize_vectorization()
 
 @app.route("/")
 def home():
@@ -169,5 +169,5 @@ def ping():
     return "pong"
 
 if 'DB_NAME' not in os.environ:
-    # initialize_vectorization()
+    initialize_vectorization()
     app.run(debug=True,host="0.0.0.0",port=5000)
