@@ -169,6 +169,7 @@ def episodes_search():
 
 @app.route("/ping", methods=['GET'])
 def ping():
+    app.logger.info("pong")
     return "pong"
 
 if 'DB_NAME' not in os.environ:
