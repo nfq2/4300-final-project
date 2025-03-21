@@ -333,7 +333,7 @@ def home():
 
 @app.route('/hotels', methods=['GET'])
 def hotels_search():
-    initialize_vectorization()
+    # initialize_vectorization()
     text = request.args.get("query", "")
     return json_search(text)
 
