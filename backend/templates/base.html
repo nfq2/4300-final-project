@@ -15,11 +15,13 @@
                 <h1 id="google-0-1">0</h1>
                 <h1 id="google-0-2">0</h1>
             </div>
-            <div class="input-box" onclick="sendFocus()">
-                <img src="{{ url_for('static', filename='images/mag.png') }}" />
-                <!-- Updated placeholder to reflect hotel search -->
-                <input placeholder="Search for hotels (e.g., family vacation hot tub)" id="filter-text-val"
-                    onkeyup="filterText()" />
+            <div class="search-container">
+                <div class="input-box">
+                    <img src="{{ url_for('static', filename='images/mag.png') }}" />
+                    <!-- Updated placeholder to reflect hotel search -->
+                    <input placeholder="Search for hotels (e.g., family vacation hot tub)" id="filter-text-val" />
+                </div>
+                <button id="search-button" onclick="filterText()">Search</button>
             </div>
         </div>
         <div id="answer-box"></div>
@@ -37,32 +39,56 @@
             `;
         }
 
-        function sendFocus() {
-            document.getElementById('filter-text-val').focus();
-        }
+        // Add event listener for pressing Enter key in the search box
+        document.getElementById('filter-text-val').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                filterText();
+            }
+        });
 
         function filterText() {
             // Clear previous results
             document.getElementById("answer-box").innerHTML = "";
+            
+            // Show loading indicator
+            const loadingDiv = document.createElement("div");
+            loadingDiv.textContent = "Searching for hotels...";
+            loadingDiv.style.textAlign = "center";
+            loadingDiv.style.padding = "20px";
+            document.getElementById("answer-box").appendChild(loadingDiv);
 
             // Get user input from text box
             const query = document.getElementById("filter-text-val").value;
-            console.log(query);
+            console.log("Searching for:", query);
 
             // Fetch from the /hotels endpoint using "query" param
             fetch("/hotels?" + new URLSearchParams({ query: query }).toString())
                 .then((response) => response.json())
                 .then((data) => {
+                    // Clear loading indicator
+                    document.getElementById("answer-box").innerHTML = "";
+                    
+                    if (data.length === 0) {
+                        document.getElementById("answer-box").innerHTML = 
+                            "<div style='text-align: center; padding: 20px;'>No hotels found matching your search criteria.</div>";
+                        return;
+                    }
+                    
                     data.forEach(row => {
                         let tempDiv = document.createElement("div");
                         // Match the keys from your Flask JSON response
                         tempDiv.innerHTML = answerBoxTemplate(
-                            row.HotelName,
-                            row.Description,
-                            row.HotelFacilities
+                            row.HotelName || "Hotel Name Not Available",
+                            row.Description || "No description available",
+                            row.HotelFacilities || "No facilities information available"
                         );
                         document.getElementById("answer-box").appendChild(tempDiv);
                     });
+                })
+                .catch(error => {
+                    document.getElementById("answer-box").innerHTML = 
+                        "<div style='text-align: center; padding: 20px; color: red;'>Error searching for hotels. Please try again.</div>";
+                    console.error("Search error:", error);
                 });
         }
     </script>
