@@ -1,14 +1,10 @@
-<!DOCTYPE html>
-<html>
-
-<head>
-    <title>{% block title %}{% endblock %} - Hotel Search</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Kanit&family=Montserrat&family=Open+Sans:wght@500&display=swap"
-        rel="stylesheet" />
-</head>
+<!doctype html>
+<title>{% block title %}{% endblock %} - Flaskr</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit&family=Montserrat&family=Open+Sans:wght@500&display=swap"
+    rel="stylesheet" />
 
 <body>
     <div class="full-body-container">
@@ -21,6 +17,7 @@
             </div>
             <div class="input-box" onclick="sendFocus()">
                 <img src="{{ url_for('static', filename='images/mag.png') }}" />
+                <!-- Updated placeholder to reflect hotel search -->
                 <input placeholder="Search for hotels (e.g., family vacation hot tub)" id="filter-text-val"
                     onkeyup="filterText()" />
             </div>
@@ -29,38 +26,44 @@
     </div>
 
     <script>
-        // Updated template for hotel results
-        function hotelTemplate(name, description, facilities) {
-            return `<div class='hotel-result'>
-                  <h3 class='hotel-name'>${name}</h3>
-                  <p class='hotel-desc'>${description}</p>
-                  <p class='hotel-facilities'>Facilities: ${facilities}</p>
-                </div>`;
+        // Template for rendering hotel data
+        function answerBoxTemplate(hotelName, description, facilities) {
+            return `
+                <div class='hotel-result'>
+                    <h3 class='hotel-name'>${hotelName}</h3>
+                    <p class='hotel-desc'>${description}</p>
+                    <p class='hotel-facilities'>Facilities: ${facilities}</p>
+                </div>
+            `;
         }
 
         function sendFocus() {
-            document.getElementById("filter-text-val").focus();
+            document.getElementById('filter-text-val').focus();
         }
 
         function filterText() {
+            // Clear previous results
             document.getElementById("answer-box").innerHTML = "";
+
+            // Get user input from text box
             const query = document.getElementById("filter-text-val").value;
             console.log(query);
-            // Use "query" as the parameter name to match your Flask endpoint
+
+            // Fetch from the /hotels endpoint using "query" param
             fetch("/hotels?" + new URLSearchParams({ query: query }).toString())
                 .then((response) => response.json())
-                .then((data) =>
-                    data.forEach((row) => {
+                .then((data) => {
+                    data.forEach(row => {
                         let tempDiv = document.createElement("div");
-                        // Use the keys from your hotel data
-                        tempDiv.innerHTML = hotelTemplate(
+                        // Match the keys from your Flask JSON response
+                        tempDiv.innerHTML = answerBoxTemplate(
                             row.HotelName,
                             row.Description,
                             row.HotelFacilities
                         );
                         document.getElementById("answer-box").appendChild(tempDiv);
-                    })
-                );
+                    });
+                });
         }
     </script>
 </body>
