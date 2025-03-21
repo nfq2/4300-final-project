@@ -333,6 +333,7 @@ def home():
 
 @app.route("/hotels")
 def hotels_search():
+    initialize_vectorization()
     text = request.args.get("query", "")
     return json_search(text)
 
@@ -342,5 +343,4 @@ def episodes_search():
     return json_search(text)
 
 if 'DB_NAME' not in os.environ:
-    initialize_vectorization()
     app.run(debug=True, host="0.0.0.0", port=5000)
