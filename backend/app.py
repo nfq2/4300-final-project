@@ -27,7 +27,7 @@ STOPWORDS = {
     'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing'
 }
 
-with open(json_file_path, 'r', encoding='utf-8') as file:
+with open(json_file_path, 'r') as file:
     hotel_data = json.load(file)  
     hotels_df = pd.DataFrame(hotel_data)
 
@@ -331,7 +331,7 @@ CORS(app)
 def home():
     return render_template('base.html', title="sample html")
 
-@app.route("/hotels")
+@app.route('/hotels', methods=['GET'])
 def hotels_search():
     initialize_vectorization()
     text = request.args.get("query", "")
@@ -341,6 +341,10 @@ def hotels_search():
 def episodes_search():
     text = request.args.get("query", "")
     return json_search(text)
+
+@app.route('/ping', methods=['GET'])
+def ping():
+    return "pong"
 
 if 'DB_NAME' not in os.environ:
     app.run(debug=True, host="0.0.0.0", port=5000)
