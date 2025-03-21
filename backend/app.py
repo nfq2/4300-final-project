@@ -156,9 +156,9 @@ def home():
 
 @app.route("/hotels", methods=['GET'])
 def hotels_search():
-    print("debug1")
+    app.logger.info("hello1")
     initialize_vectorization()
-    print("debug2")
+    app.logger.info("hello2")
     text = request.args.get("query", "")
     return json_search(text)
 
