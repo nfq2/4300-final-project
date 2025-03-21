@@ -10,7 +10,7 @@ from helpers.MySQLDatabaseHandler import MySQLDatabaseHandler
 import pandas as pd
 
 # Set up ROOT_PATH relative to the project
-os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..", os.curdir))
+os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..",os.curdir))
 current_directory = os.path.dirname(os.path.abspath(__file__))
 json_file_path = os.path.join(current_directory, 'init.json')
 
@@ -168,7 +168,6 @@ def episodes_search():
 def ping():
     return "pong"
 
-if __name__ == "__main__":
-    # If not using a DB (environment variable check), run the app locally
-    if 'DB_NAME' not in os.environ:
-        app.run(debug=True, host="0.0.0.0", port=5000)
+if 'DB_NAME' not in os.environ:
+    # initialize_vectorization()
+    app.run(debug=True,host="0.0.0.0",port=5000)
