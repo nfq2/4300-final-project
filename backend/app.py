@@ -87,7 +87,7 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * asin(sqrt(a))
     return R * c
 
-def json_search(query, user_lat=None, user_lon=None, unit="km", top_n=10):
+def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="default", top_n=10):
     global hotels_df
 
     if not hotel_tokens or not query:
@@ -122,6 +122,8 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", top_n=10):
 
         results_df = results_df.sort_values('similarity_score', ascending=False)
         top_results = results_df.head(top_n)
+        if sort_order in ['asc', 'desc'] and user_lat is not None and user_lon is not None:
+            top_results = top_results.sort_values('distance_km', ascending=(sort_order == 'asc'))
 
         # Append distance info to description
         if user_lat is not None and user_lon is not None:
@@ -156,7 +158,8 @@ def hotels_search():
     user_lat = request.args.get("lat", type=float)
     user_lon = request.args.get("lon", type=float)
     unit = request.args.get("unit", default="km")
-    return json_search(text, user_lat=user_lat, user_lon=user_lon, unit=unit)
+    sort_order = request.args.get("sort", default="default")
+    return json_search(text, user_lat=user_lat, user_lon=user_lon, unit=unit, sort_order=sort_order)
 
 @app.route("/episodes", methods=['GET'])
 def episodes_search():
