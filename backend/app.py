@@ -148,14 +148,10 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
 
         if 'HotelWebsiteUrl' in top_results.columns:
             top_results['imageSearchLink'] = top_results['HotelWebsiteUrl'].apply(
-                    lambda url: f"https://www.google.com/search?tbm=isch&q={url}" if isinstance(url, str) else ""
-    )
-            top_results['hotelSearchLink'] = top_results['HotelWebsiteUrl'].apply(
-                lambda url: url if isinstance(url, str) and url.startswith("http") else "#"
-    )
+                lambda url: f"https://www.google.com/search?tbm=isch&q={url}" if isinstance(url, str) else ""
+            )
 
-
-        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'cityName', 'hotelSearchLink', 'countyName','similarity_score']
+        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName','similarity_score']
         if 'imageSearchLink' in top_results.columns:
             columns_to_include.append('imageSearchLink')
         return top_results[columns_to_include].to_json(orient='records')
@@ -167,6 +163,7 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
 
 app = Flask(__name__)
 CORS(app)
+initialize_hotel_tokens()
 
 @app.route("/")
 def home():
@@ -175,7 +172,6 @@ def home():
 @app.route("/hotels", methods=['GET'])
 def hotels_search():
     app.logger.info("Initializing hotel tokens")
-    initialize_hotel_tokens()
     app.logger.info("Processing search request")
     text = request.args.get("query", "")
     user_lat = request.args.get("lat", type=float)
@@ -195,4 +191,4 @@ def ping():
     return "pong"
 
 if 'DB_NAME' not in os.environ:
-    app.run(debug=True,host="0.0.0.0",port=5000)
+    app.run(debug=True,host="0.0.0.0",port=5001)
