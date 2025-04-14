@@ -6,6 +6,7 @@ from collections import Counter, defaultdict
 from flask import Flask, render_template, request
 from flask_cors import CORS
 import pandas as pd
+from math import radians, cos, sin, asin, sqrt
 
 # Set up ROOT_PATH relative to the project
 os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..",os.curdir))
@@ -77,31 +78,63 @@ def jaccard_similarity(set_a, set_b):
         
     return intersection / union
 
-def json_search(query, top_n=10):
+def haversine(lat1, lon1, lat2, lon2):
+    # Earth radius in kilometers
+    R = 6371.0
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    return R * c
+
+def json_search(query, user_lat=None, user_lon=None, unit="km", top_n=10):
+    global hotels_df
+
     if not hotel_tokens or not query:
         return '[]'
+
     try:
-        # Process the query
         processed_query = preprocess_text(query)
         query_tokens = tokenize(processed_query)
-        
-        # Calculate Jaccard similarity between query and each hotel
+
         similarity_scores = []
+        distances = []
+
         for idx, hotel_token_set in enumerate(hotel_tokens):
             score = jaccard_similarity(query_tokens, hotel_token_set)
             similarity_scores.append(score)
-        
-        # Add similarity scores to results dataframe
+
+            if user_lat is not None and user_lon is not None:
+                try:
+                    map_val = hotels_df.iloc[idx].get('Map', '')
+                    lat_str, lon_str = map_val.split('|')
+                    hotel_lat = float(lat_str)
+                    hotel_lon = float(lon_str)
+                    dist_km = haversine(user_lat, user_lon, hotel_lat, hotel_lon)
+                    dist = dist_km if unit == "km" else dist_km * 0.621371
+                    distances.append(round(dist, 1))
+                except:
+                    distances.append(None)
+
         results_df = hotels_df.copy()
         results_df['similarity_score'] = similarity_scores
+        results_df['distance_km'] = distances
+
         results_df = results_df.sort_values('similarity_score', ascending=False)
         top_results = results_df.head(top_n)
-        
-        columns_to_include = ['HotelName', 'similarity_score']
-        for col in ['Description', 'HotelFacilities', 'cityName', 'HotelRating']:
-            if col in top_results.columns:
-                columns_to_include.append(col)
+
+        # Append distance info to description
+        if user_lat is not None and user_lon is not None:
+            def add_distance(row):
+                desc = row.get('Description', '')
+                if row['distance_km'] is not None:
+                    return f"{desc} ({row['distance_km']} {'km' if unit == 'km' else 'mi'} away from you)"                
+                return desc
+            top_results['Description'] = top_results.apply(add_distance, axis=1)
+
+        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'similarity_score']
         return top_results[columns_to_include].to_json(orient='records')
+
     except Exception as e:
         print(f"Error in json_search: {str(e)}")
         return json.dumps({"error": str(e)})
@@ -120,7 +153,10 @@ def hotels_search():
     initialize_hotel_tokens()
     app.logger.info("Processing search request")
     text = request.args.get("query", "")
-    return json_search(text)
+    user_lat = request.args.get("lat", type=float)
+    user_lon = request.args.get("lon", type=float)
+    unit = request.args.get("unit", default="km")
+    return json_search(text, user_lat=user_lat, user_lon=user_lon, unit=unit)
 
 @app.route("/episodes", methods=['GET'])
 def episodes_search():
