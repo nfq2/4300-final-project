@@ -14,13 +14,13 @@
         <div class="overlay">
             <div class="title">
                 <h1>TripTune</h1>
-                <p class="subtitle">Discover the perfect stay to plan your next adventure!</p>
+                <p class="subtitle">Plan your next dream vacation!</p>
             </div>
 
             <div class="search-section">
                 <div class="search-box">
                     <i class="fas fa-search search-icon"></i>
-                    <input placeholder="Search for hotels (e.g., family vacation hot tub)" id="filter-text-val" />
+                    <input placeholder="Search for your ideal trip (e.g., family vacation hot tub)" id="filter-text-val" />
                     <button id="search-button" onclick="filterText()">Search</button>
                 </div>
 
@@ -94,23 +94,19 @@
 
     <script>
         // Template for rendering hotel data
-        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, hotelSearchLink, cityName, countyName) {
+        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName) {
             return `
-        <div class='hotel-result'>
-            <h3 class='hotel-name'>${hotelName}</h3>
-            <p class='hotel-location'><strong>Location:</strong> ${cityName}, ${countyName}</p>
-            <p class='hotel-desc'>${description}</p>
-            <p class='hotel-facilities'>Facilities: ${facilities}</p>
-            <a href="${imageSearchLink}" target="_blank">
-    <button class='image-button'>See Images</button>
-    </a><a href="${hotelSearchLink}" target="_blank">
-    <button class='image-button'>See Hotel</button>
-</a>
-
-        </div>
-    `;
+                <div class='hotel-result'>
+                    <h3 class='hotel-name'>${hotelName}</h3>
+                    <p class='hotel-location'><strong>Location:</strong> ${cityName}, ${countyName}</p>
+                    <p class='hotel-desc'>${description}</p>
+                    <p class='hotel-facilities'>Facilities: ${facilities}</p>
+                     <a href="${imageSearchLink}" target="_blank">
+                <button class='image-button'>See Images</button>
+            </a>
+                </div>
+            `;
         }
-
 
         // Add event listener for pressing Enter key in the search box
         document.getElementById('filter-text-val').addEventListener('keypress', function (event) {
@@ -180,7 +176,6 @@
                             row.Description || "No description available",
                             row.HotelFacilities || "No facilities information available",
                             row.imageSearchLink || "#",
-                            row.hotelSearchLink || "#",
                             row.cityName || "Unknown City",
                             row.countyName || "Unknown Country"
                         );
