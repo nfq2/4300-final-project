@@ -24,6 +24,21 @@
                 <button id="search-button" onclick="filterText()">Search</button>
             </div>
         </div>
+        <div style="text-align: center; margin-bottom: 10px;">
+            <label for="unit-toggle">Distance Unit:</label>
+            <select id="unit-toggle" onchange="filterText()">
+                <option value="km" selected>Metric (km)</option>
+                <option value="mi">Imperial (miles)</option>
+            </select>
+        </div>
+        <div style="text-align: center; margin-bottom: 10px;">
+            <label for="sort-toggle">Sort by Distance:</label>
+            <select id="sort-toggle" onchange="filterText()">
+                <option value="default" selected>Relevance</option>
+                <option value="asc">Distance (Ascending)</option>
+                <option value="desc">Distance (Descending)</option>
+            </select>
+        </div>
         <div id="answer-box"></div>
     </div>
 
@@ -40,7 +55,7 @@
         }
 
         // Add event listener for pressing Enter key in the search box
-        document.getElementById('filter-text-val').addEventListener('keypress', function(event) {
+        document.getElementById('filter-text-val').addEventListener('keypress', function (event) {
             if (event.key === 'Enter') {
                 filterText();
             }
@@ -49,7 +64,7 @@
         function filterText() {
             // Clear previous results
             document.getElementById("answer-box").innerHTML = "";
-            
+
             // Show loading indicator
             const loadingDiv = document.createElement("div");
             loadingDiv.textContent = "Searching for hotels...";
@@ -59,21 +74,31 @@
 
             // Get user input from text box
             const query = document.getElementById("filter-text-val").value;
+            const unit = document.getElementById("unit-toggle").value;
+            const sort = document.getElementById("sort-toggle").value;
+
+
             console.log("Searching for:", query);
 
             // Fetch from the /hotels endpoint using "query" param
-            fetch("/hotels?" + new URLSearchParams({ query: query }).toString())
+            fetch("/hotels?" + new URLSearchParams({
+                query: query,
+                lat: userLat,
+                lon: userLon,
+                unit: unit,
+                sort: sort
+            }).toString())
                 .then((response) => response.json())
                 .then((data) => {
                     // Clear loading indicator
                     document.getElementById("answer-box").innerHTML = "";
-                    
+
                     if (data.length === 0) {
-                        document.getElementById("answer-box").innerHTML = 
+                        document.getElementById("answer-box").innerHTML =
                             "<div style='text-align: center; padding: 20px;'>No hotels found matching your search criteria.</div>";
                         return;
                     }
-                    
+
                     data.forEach(row => {
                         let tempDiv = document.createElement("div");
                         // Match the keys from your Flask JSON response
@@ -86,11 +111,25 @@
                     });
                 })
                 .catch(error => {
-                    document.getElementById("answer-box").innerHTML = 
+                    document.getElementById("answer-box").innerHTML =
                         "<div style='text-align: center; padding: 20px; color: red;'>Error searching for hotels. Please try again.</div>";
                     console.error("Search error:", error);
                 });
         }
+
+        let userLat = null;
+        let userLon = null;
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                userLat = position.coords.latitude;
+                userLon = position.coords.longitude;
+                console.log("User location:", userLat, userLon);
+            },
+            (error) => {
+                console.error("Geolocation error:", error);
+            }
+        );
     </script>
 </body>
 
