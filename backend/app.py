@@ -148,10 +148,14 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
 
         if 'HotelWebsiteUrl' in top_results.columns:
             top_results['imageSearchLink'] = top_results['HotelWebsiteUrl'].apply(
-                lambda url: f"https://www.google.com/search?tbm=isch&q={url}" if isinstance(url, str) else ""
-            )
+                    lambda url: f"https://www.google.com/search?tbm=isch&q={url}" if isinstance(url, str) else ""
+    )
+            top_results['hotelSearchLink'] = top_results['HotelWebsiteUrl'].apply(
+                lambda url: url if isinstance(url, str) and url.startswith("http") else "#"
+    )
 
-        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName','similarity_score']
+
+        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'cityName', 'hotelSearchLink', 'countyName','similarity_score']
         if 'imageSearchLink' in top_results.columns:
             columns_to_include.append('imageSearchLink')
         return top_results[columns_to_include].to_json(orient='records')
