@@ -20,7 +20,8 @@
             <div class="search-section">
                 <div class="search-box">
                     <i class="fas fa-search search-icon"></i>
-                    <input placeholder="Search for your ideal trip (e.g., family vacation hot tub)" id="filter-text-val" />
+                    <input placeholder="Search for your ideal trip (e.g., family vacation hot tub)"
+                        id="filter-text-val" />
                     <button id="search-button" onclick="filterText()">Search</button>
                 </div>
 
@@ -94,11 +95,12 @@
 
     <script>
         // Template for rendering hotel data
-        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName) {
+        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName, rating) {
             return `
                 <div class='hotel-result'>
                     <h3 class='hotel-name'>${hotelName}</h3>
-                    <p class='hotel-location'><strong>Location:</strong> ${cityName}, ${countyName}</p>
+                    <p class='hotel-location'><strong>Located at:</strong> ${cityName}, ${countyName}</p>
+                    <p class='hotel-rating'><strong>Rating:</strong> ${rating ? rating : "No rating available"}</p>
                     <p class='hotel-desc'>${description}</p>
                     <p class='hotel-facilities'>Facilities: ${facilities}</p>
                      <a href="${imageSearchLink}" target="_blank">
@@ -177,7 +179,8 @@
                             row.HotelFacilities || "No facilities information available",
                             row.imageSearchLink || "#",
                             row.cityName || "Unknown City",
-                            row.countyName || "Unknown Country"
+                            row.countyName || "Unknown Country",
+                            row.HotelRating
                         );
                         document.getElementById("answer-box").appendChild(tempDiv);
                     });
