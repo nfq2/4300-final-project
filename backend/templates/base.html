@@ -94,10 +94,11 @@
 
     <script>
         // Template for rendering hotel data
-        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink) {
+        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName) {
             return `
                 <div class='hotel-result'>
                     <h3 class='hotel-name'>${hotelName}</h3>
+                    <p class='hotel-location'><strong>Location:</strong> ${cityName}, ${countyName}</p>
                     <p class='hotel-desc'>${description}</p>
                     <p class='hotel-facilities'>Facilities: ${facilities}</p>
                      <a href="${imageSearchLink}" target="_blank">
@@ -164,7 +165,9 @@
                             row.HotelName || "Hotel Name Not Available",
                             row.Description || "No description available",
                             row.HotelFacilities || "No facilities information available",
-                            row.imageSearchLink || "#"
+                            row.imageSearchLink || "#",
+                            row.cityName || "Unknown City",
+                            row.countyName || "Unknown Country"
                         );
                         document.getElementById("answer-box").appendChild(tempDiv);
                     });
