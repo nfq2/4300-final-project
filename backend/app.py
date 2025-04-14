@@ -133,8 +133,14 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
                     return f"{desc} ({row['distance_km']} {'km' if unit == 'km' else 'mi'} away from you)"                
                 return desc
             top_results['Description'] = top_results.apply(add_distance, axis=1)
-
-        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'similarity_score']
+        # Add hotel images
+        if 'HotelWebsiteUrl' in top_results.columns:
+            top_results['imageSearchLink'] = top_results['HotelWebsiteUrl'].apply(
+                lambda url: f"https://www.google.com/search?tbm=isch&q={url}" if isinstance(url, str) else ""
+            )
+        columns_to_include = ['HotelName', 'similarity_score']
+        if 'imageSearchLink' in top_results.columns:
+          columns_to_include.append('imageSearchLink')
         return top_results[columns_to_include].to_json(orient='records')
 
     except Exception as e:

@@ -94,12 +94,15 @@
 
     <script>
         // Template for rendering hotel data
-        function answerBoxTemplate(hotelName, description, facilities) {
+        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink) {
             return `
                 <div class='hotel-result'>
                     <h3 class='hotel-name'>${hotelName}</h3>
                     <p class='hotel-desc'>${description}</p>
                     <p class='hotel-facilities'>Facilities: ${facilities}</p>
+                     <a href="${imageSearchLink}" target="_blank">
+                <button class='image-button'>See Images</button>
+            </a>
                 </div>
             `;
         }
@@ -160,7 +163,8 @@
                         tempDiv.innerHTML = answerBoxTemplate(
                             row.HotelName || "Hotel Name Not Available",
                             row.Description || "No description available",
-                            row.HotelFacilities || "No facilities information available"
+                            row.HotelFacilities || "No facilities information available",
+                            row.imageSearchLink || "#"
                         );
                         document.getElementById("answer-box").appendChild(tempDiv);
                     });
