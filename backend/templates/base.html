@@ -39,7 +39,7 @@
                     </select>
                 </div>
             </div>
-            <div style="text-align: center; margin-bottom: 10px;">
+            <div class="coordinate-inputs">
                 <label for="lat-input">Latitude:</label>
                 <input type="number" id="lat-input" placeholder="Enter latitude" step="any">
                 <label for="lon-input">Longitude:</label>
@@ -132,6 +132,16 @@
             const sort = document.getElementById("sort-toggle").value;
             const lat = document.getElementById("lat-input").value;
             const lon = document.getElementById("lon-input").value;
+
+            if (lat === "" || lon === "") {
+                alert("Please enter both latitude and longitude before searching.");
+                if (lat === "") document.getElementById("lat-input").style.border = "2px solid red";
+                if (lon === "") document.getElementById("lon-input").style.border = "2px solid red";
+                return;
+            } else {
+                document.getElementById("lat-input").style.border = "";
+                document.getElementById("lon-input").style.border = "";
+            }
 
             console.log("Searching for:", query);
 
