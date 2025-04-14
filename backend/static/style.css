@@ -25,6 +25,7 @@ html {
   align-items: center;
   color: white;
   overflow: hidden;
+  overflow: hidden;
 }
 
 .overlay::before {
@@ -38,6 +39,7 @@ html {
   background-size: cover;
   background-position: center;
   opacity: 0.25;
+  z-index: 0;
   z-index: 0;
 }
 
@@ -73,6 +75,7 @@ html {
   background-color: white;
   border-radius: 40px;
   padding: 10px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -111,6 +114,8 @@ html {
 .filters {
   margin-top: 30px;
   /* More space from the search bar */
+  margin-top: 30px;
+  /* More space from the search bar */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -120,6 +125,8 @@ html {
 }
 
 .filters select {
+  appearance: none;
+  /* removes native dropdown arrow */
   appearance: none;
   /* removes native dropdown arrow */
   -webkit-appearance: none;
@@ -166,6 +173,7 @@ html {
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .hotel-card h3 {
@@ -200,4 +208,32 @@ html {
   font-weight: 500;
   transition: 0.3s ease;
   font-family: inherit;
+
+.coordinate-inputs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.coordinate-inputs input[type="number"] {
+  padding: 10px;
+  border-radius: 30px;
+  border: 1px solid #ccc;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  width: 150px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.coordinate-inputs input[type="number"]:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+.coordinate-inputs label {
+  font-size: 14px;
+  color: #000;
 }
