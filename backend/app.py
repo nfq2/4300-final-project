@@ -151,7 +151,7 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
                 lambda url: f"https://www.google.com/search?tbm=isch&q={url}" if isinstance(url, str) else ""
             )
 
-        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName','similarity_score']
+        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName','similarity_score', 'HotelRating']
         if 'imageSearchLink' in top_results.columns:
             columns_to_include.append('imageSearchLink')
         return top_results[columns_to_include].to_json(orient='records')
