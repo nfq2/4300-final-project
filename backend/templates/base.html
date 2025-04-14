@@ -94,19 +94,23 @@
 
     <script>
         // Template for rendering hotel data
-        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName) {
+        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, hotelSearchLink, cityName, countyName) {
             return `
-                <div class='hotel-result'>
-                    <h3 class='hotel-name'>${hotelName}</h3>
-                    <p class='hotel-location'><strong>Location:</strong> ${cityName}, ${countyName}</p>
-                    <p class='hotel-desc'>${description}</p>
-                    <p class='hotel-facilities'>Facilities: ${facilities}</p>
-                     <a href="${imageSearchLink}" target="_blank">
-                <button class='image-button'>See Images</button>
-            </a>
-                </div>
-            `;
+        <div class='hotel-result'>
+            <h3 class='hotel-name'>${hotelName}</h3>
+            <p class='hotel-location'><strong>Location:</strong> ${cityName}, ${countyName}</p>
+            <p class='hotel-desc'>${description}</p>
+            <p class='hotel-facilities'>Facilities: ${facilities}</p>
+            <a href="${imageSearchLink}" target="_blank">
+    <button class='image-button'>See Images</button>
+    </a><a href="${hotelSearchLink}" target="_blank">
+    <button class='image-button'>See Hotel</button>
+</a>
+
+        </div>
+    `;
         }
+
 
         // Add event listener for pressing Enter key in the search box
         document.getElementById('filter-text-val').addEventListener('keypress', function (event) {
@@ -176,6 +180,7 @@
                             row.Description || "No description available",
                             row.HotelFacilities || "No facilities information available",
                             row.imageSearchLink || "#",
+                            row.hotelSearchLink || "#",
                             row.cityName || "Unknown City",
                             row.countyName || "Unknown Country"
                         );
