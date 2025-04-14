@@ -195,4 +195,4 @@ def ping():
     return "pong"
 
 if 'DB_NAME' not in os.environ:
-    app.run(debug=True,host="0.0.0.0",port=5001)
+    app.run(debug=True,host="0.0.0.0",port=5000)
