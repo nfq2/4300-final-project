@@ -101,6 +101,7 @@ html {
   cursor: pointer;
   font-weight: 500;
   transition: 0.3s ease;
+  font-family: inherit;
 }
 
 .search-box button:hover {
@@ -186,4 +187,17 @@ html {
 
 .loading.error {
   color: #ff7070;
+}
+
+.image-button {
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 30px;
+  margin-left: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.3s ease;
+  font-family: inherit;
 }
