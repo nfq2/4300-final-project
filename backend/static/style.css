@@ -208,6 +208,7 @@ html {
   font-weight: 500;
   transition: 0.3s ease;
   font-family: inherit;
+}
 
 .coordinate-inputs {
   display: flex;
