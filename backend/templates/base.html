@@ -94,13 +94,29 @@
     </div> -->
 
     <script>
+        function convertRatingToStars(ratingStr) {
+            if (!ratingStr || typeof ratingStr !== "string") return "No rating available";
+
+            const wordToNum = {
+                'onestar': 1,
+                'twostar': 2,
+                'threestar': 3,
+                'fourstar': 4,
+                'all': 5
+            };
+
+            const word = ratingStr.split("/")[0].toLowerCase().trim();
+            const numStars = wordToNum[word] || 0;
+
+            return '★'.repeat(numStars) + '☆'.repeat(5 - numStars);
+        }
         // Template for rendering hotel data
         function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName, rating) {
             return `
                 <div class='hotel-result'>
                     <h3 class='hotel-name'>${hotelName}</h3>
                     <p class='hotel-location'><strong>Located at:</strong> ${cityName}, ${countyName}</p>
-                    <p class='hotel-rating'><strong>Rating:</strong> ${rating ? rating : "No rating available"}</p>
+                    <p class='hotel-rating'>${convertRatingToStars(rating || "")}</p>
                     <p class='hotel-desc'>${description}</p>
                     <p class='hotel-facilities'>Facilities: ${facilities}</p>
                      <a href="${imageSearchLink}" target="_blank">
