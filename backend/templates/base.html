@@ -14,7 +14,7 @@
         <div class="overlay">
             <div class="title">
                 <h1>TripTune</h1>
-                <p class="subtitle">Plan your next dream vacation!</p>
+                <p class="subtitle">Plan your next dream vacation! 🛫🏖🗺</p>
             </div>
 
             <div class="search-section">
@@ -112,18 +112,30 @@
 
             return '★'.repeat(numStars) + '☆'.repeat(5 - numStars);
         }
-        // Template for rendering hotel data
+        
         function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName, rating) {
+            description = description.replace(/^[Hh]otel[Dd]escription[#:\s]*/, '');
+            const facilityList = facilities.split(',').map(fac => `<span class="facility-tag">🛏️ ${fac.trim()}</span>`)
+            .join('');
+            
             return `
-                <div class='hotel-result'>
-                    <h3 class='hotel-name'>${hotelName}</h3>
-                    <p class='hotel-location'><strong>Located at:</strong> ${cityName}, ${countyName}</p>
-                    <p class='hotel-rating'>${convertRatingToStars(rating || "")}</p>
-                    <p class='hotel-desc'>${description}</p>
-                    <p class='hotel-facilities'>Facilities: ${facilities}</p>
-                     <a href="${imageSearchLink}" target="_blank">
-                <button class='image-button'>See Images</button>
-            </a>
+                <div class='hotel-card'>
+                    <div class='hotel-header'>
+                        <h3 class='hotel-name'>🏨 ${hotelName}</h3>
+                        <p class='hotel-location'>📍 ${cityName}, ${countyName}</p>
+                        <p class='hotel-rating'>${convertRatingToStars(rating || "")}</p>
+                    </div>
+                    <div class='hotel-body'>
+                        <p class='section-label'><strong>Description:</strong></p>
+                        <p class='hotel-text'>${description}</p>
+                        <p class='section-label'><strong>Facilities:</strong></p>
+                        <p class='hotel-text'>${facilityList}</p>
+                        <div class='button-container'>
+                            <a href="${imageSearchLink}" target="_blank">
+                                <button class='image-button'>See Images</button>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             `;
         }
