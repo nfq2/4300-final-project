@@ -9,11 +9,17 @@ import pandas as pd
 from math import radians, cos, sin, asin, sqrt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
-import uuid
+
+# Add these new imports
+from datetime import datetime
+import pickle
 
 os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..",os.curdir))
 current_directory = os.path.dirname(os.path.abspath(__file__))
 json_file_path = os.path.join(current_directory, 'init.json')
+
+# Add feedback file path
+feedback_file_path = os.path.join(current_directory, 'user_feedback.pkl')
 
 STOPWORDS = {
     'a', 'an', 'the', 'and', 'or', 'but', 'if', 'because', 'as', 'what', 'when', 
@@ -31,6 +37,18 @@ session_feedback = {}
 with open(json_file_path, 'r', encoding='utf-8') as file:
     hotel_data = json.load(file)
     hotels_df = pd.DataFrame(hotel_data)
+
+# Add global user feedback dictionary
+# Structure: {query_text: {'relevant': [hotel_ids], 'non_relevant': [hotel_ids]}}
+user_feedback = {}
+
+# Load existing feedback if available
+if os.path.exists(feedback_file_path):
+    try:
+        with open(feedback_file_path, 'rb') as f:
+            user_feedback = pickle.load(f)
+    except Exception as e:
+        print(f"Error loading feedback file: {str(e)}")
 
 def preprocess_text(text):
     if not isinstance(text, str):
@@ -65,7 +83,6 @@ def initialize_hotel_tokens():
     n_components = 100 if X.shape[1] >= 100 else (X.shape[1] - 1 if X.shape[1] > 1 else 1)
     svd_model = TruncatedSVD(n_components=n_components)
     doc_vectors = svd_model.fit_transform(X)
-
     
     print(f"Tokenized {len(hotels_df)} hotels")
 
@@ -89,18 +106,51 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * asin(sqrt(a))
     return R * c
 
-def apply_rocchio(session_id):
-    sf = session_feedback[session_id]
-    q0 = sf['query_vector']
-    D = doc_vectors
-    alpha, beta, gamma = 1.0, 0.75, 0.15
-    P = np.array([D[i] for i in sf['pos']]) if sf['pos'] else np.zeros_like(q0)
-    N = np.array([D[i] for i in sf['neg']]) if sf['neg'] else np.zeros_like(q0)
-    rp = P.mean(axis=0) if sf['pos'] else 0
-    rn = N.mean(axis=0) if sf['neg'] else 0
-    return alpha*q0 + beta*rp - gamma*rn
+# Modified Rocchio algorithm to incorporate user feedback
+def apply_rocchio(query_vector, doc_vectors, similarities, query_text, alpha=1.0, beta=0.75, gamma=0.15, top_k=5):
+    """
+    Apply the Rocchio algorithm for query modification using relevance feedback.
+    
+    Parameters:
+    - query_vector: Original query vector
+    - doc_vectors: Document vectors matrix
+    - similarities: Current similarity scores
+    - query_text: The original text query (used to look up user feedback)
+    - alpha: Weight for original query (typically 1.0)
+    - beta: Weight for relevant documents (typically 0.75)
+    - gamma: Weight for non-relevant documents (typically 0.15)
+    - top_k: Number of top documents to consider if no explicit feedback
+    
+    Returns:
+    - Modified query vector
+    """
+    modified_query = query_vector.copy()
+    
+    # Check if we have explicit feedback for this query
+    if query_text in user_feedback:
+        feedback = user_feedback[query_text]
+        
+        # Get relevant document indices
+        relevant_indices = feedback.get('relevant', [])
+        if relevant_indices:
+            relevant_mean = np.mean(doc_vectors[relevant_indices], axis=0)
+            modified_query += beta * relevant_mean
+        
+        # Get non-relevant document indices
+        non_relevant_indices = feedback.get('non_relevant', [])
+        if non_relevant_indices:
+            non_relevant_mean = np.mean(doc_vectors[non_relevant_indices], axis=0)
+            modified_query -= gamma * non_relevant_mean
+    else:
+        # If no explicit feedback, use top-k documents as pseudo-relevant
+        top_indices = np.argsort(similarities)[-top_k:]
+        if len(top_indices) > 0:
+            relevant_mean = np.mean(doc_vectors[top_indices], axis=0)
+            modified_query = alpha * query_vector + beta * relevant_mean
+    
+    return modified_query
 
-def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="default", top_n=10):
+def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="default", top_n=10, session_id=None):
     global hotels_df, vectorizer, svd_model, doc_vectors
 
     if doc_vectors is None or not query:
@@ -113,7 +163,8 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
 
         initial_similarities = cosine_similarity(query_vector, doc_vectors)
 
-        modified_query_vector = apply_rocchio(query_vector, doc_vectors, initial_similarities, top_k=5, alpha=1.0, beta=0.75)
+        # Apply Rocchio algorithm using feedback
+        modified_query_vector = apply_rocchio(query_vector, doc_vectors, initial_similarities, query)
 
         similarities = cosine_similarity(modified_query_vector, doc_vectors)
 
@@ -136,6 +187,7 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
         results_df = hotels_df.copy()
         results_df['similarity_score'] = similarities
         results_df['distance_km'] = distances
+        results_df['hotel_index'] = results_df.index  # Store original index for feedback
 
         results_df = results_df.sort_values('similarity_score', ascending=False)
         top_results = results_df.head(top_n)
@@ -167,15 +219,23 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
                 lambda url: f"{url}" if isinstance(url, str) else ""
             )
 
-        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName','similarity_score', 'HotelRating']
+        columns_to_include = ['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName',
+                             'similarity_score', 'HotelRating', 'hotel_index']
         if 'imageSearchLink' in top_results.columns:
             columns_to_include.append('imageSearchLink')
+            
+        # Store query for session if provided
+        if session_id:
+            session_queries[session_id] = query
+            
         return top_results[columns_to_include].to_json(orient='records')
 
     except Exception as e:
         print(f"Error in json_search: {str(e)}")
         return json.dumps({"error": str(e)})
 
+# Keep track of sessions and their queries
+session_queries = {}
 
 app = Flask(__name__)
 CORS(app)
@@ -183,52 +243,63 @@ initialize_hotel_tokens()
 
 @app.route("/")
 def home():
-    return render_template('base.html', title="sample html")
+    return render_template('base.html', title="TripTune - Hotel Finder")
 
 @app.route("/hotels", methods=['GET'])
 def hotels_search():
-    query = request.args.get("query", "")
-    lat = request.args.get("lat", type=float)
-    lon = request.args.get("lon", type=float)
-    unit = request.args.get("unit", "km")
-    sort_order = request.args.get("sort", "default")
+    app.logger.info("Processing search request")
+    text = request.args.get("query", "")
+    user_lat = request.args.get("lat", type=float)
+    user_lon = request.args.get("lon", type=float)
+    unit = request.args.get("unit", default="km")
+    sort_order = request.args.get("sort", default="default")
+    session_id = request.args.get("session_id", None)
+    
+    return json_search(text, user_lat=user_lat, user_lon=user_lon, unit=unit, sort_order=sort_order, session_id=session_id)
 
-    processed_query = preprocess_text(query)
-    q_tfidf = vectorizer.transform([processed_query])
-    q_vector = svd_model.transform(q_tfidf)[0]
-
-    session_id = str(uuid.uuid4())
-    session_feedback[session_id] = {"query_vector": q_vector, "pos": set(), "neg": set()}
-
-    similarities = cosine_similarity(q_vector, doc_vectors)
-    hotels_df['similarity_score'] = similarities
-    top_results = hotels_df.sort_values(by='similarity_score', ascending=False).head(10)
-    results = top_results[['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName', 'similarity_score', 'HotelRating']].to_dict(orient='records')
-    return jsonify({"session_id": session_id, "results": results})
-
-@app.route("/feedback", methods=["POST"])
-def feedback():
-    data = request.get_json()
-    sid = data["session_id"]
-    idx = data["index"]
-    fb = data["feedback"]
-
-    if sid not in session_feedback:
-        return jsonify({"error": "invalid session"}), 400
-
-    if fb == "thumbs_up":
-        session_feedback[sid]["pos"].add(idx)
-        session_feedback[sid]["neg"].discard(idx)
-    elif fb == "thumbs_down":
-        session_feedback[sid]["neg"].add(idx)
-        session_feedback[sid]["pos"].discard(idx)
-
-    q_mod = apply_rocchio(sid)
-    similarities = cosine_similarity(q_mod, doc_vectors)
-    hotels_df['similarity_score'] = similarities
-    top_results = hotels_df.sort_values(by='similarity_score', ascending=False).head(10)
-    results = top_results[['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName', 'similarity_score', 'HotelRating']].to_dict(orient='records')
-    return jsonify({ "session_id": sid, "results": results })
+@app.route("/feedback", methods=['POST'])
+def record_feedback():
+    """Handle user feedback on hotel results"""
+    global user_feedback
+    
+    try:
+        data = request.json
+        query = data.get('query')
+        hotel_index = data.get('hotel_index')
+        is_relevant = data.get('is_relevant')  # True for thumbs up, False for thumbs down
+        
+        if not query or hotel_index is None or is_relevant is None:
+            return jsonify({"error": "Missing required data"}), 400
+        
+        # Convert hotel_index to integer
+        hotel_index = int(hotel_index)
+        
+        # Initialize feedback for this query if not exists
+        if query not in user_feedback:
+            user_feedback[query] = {'relevant': [], 'non_relevant': []}
+        
+        # Add feedback based on relevance
+        if is_relevant:
+            if hotel_index not in user_feedback[query]['relevant']:
+                user_feedback[query]['relevant'].append(hotel_index)
+            # Remove from non-relevant if it was there
+            if hotel_index in user_feedback[query]['non_relevant']:
+                user_feedback[query]['non_relevant'].remove(hotel_index)
+        else:
+            if hotel_index not in user_feedback[query]['non_relevant']:
+                user_feedback[query]['non_relevant'].append(hotel_index)
+            # Remove from relevant if it was there
+            if hotel_index in user_feedback[query]['relevant']:
+                user_feedback[query]['relevant'].remove(hotel_index)
+        
+        # Save feedback to file
+        with open(feedback_file_path, 'wb') as f:
+            pickle.dump(user_feedback, f)
+        
+        return jsonify({"success": True, "message": "Feedback recorded"})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/episodes", methods=['GET'])
 def episodes_search():

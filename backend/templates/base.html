@@ -1,136 +1,183 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <title>{% block title %}{% endblock %} - Hotels Finder</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+  <meta charset="utf-8" />
+  <title>{% block title %}{% endblock %} - TripTune: Hotel Finder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet" />
+  <!-- Added Font Awesome for feedback icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 </head>
 
 <body>
-    <div class="hero-container">
-        <div class="overlay">
-            <div class="title">
-                <h1>TripTune</h1>
-                <p class="subtitle">Plan your next dream vacation! 🛫🏖🗺</p>
-            </div>
+  <div class="hero-container">
+    <div class="overlay">
+      <div class="title">
+        <h1>TripTune</h1>
+        <p class="subtitle">Plan your next dream vacation! 🛫🏖🗺</p>
+      </div>
 
-            <div class="search-section">
-                <div class="search-box">
-                    <i class="fas fa-search search-icon"></i>
-                    <input placeholder="Search for your ideal trip (e.g., family vacation hot tub)"
-                        id="filter-text-val" />
-                    <button id="search-button" onclick="filterText()">Search</button>
-                </div>
-
-                <div class="filters">
-                    <label for="unit-toggle">Distance Unit:</label>
-                    <select id="unit-toggle">
-                        <option value="km" selected>Metric (km)</option>
-                        <option value="mi">Imperial (miles)</option>
-                    </select>
-
-                    <label for="sort-toggle">Sort by:</label>
-                    <select id="sort-toggle">
-                        <option value="default" selected>Relevance</option>
-                        <option value="asc">Distance (Ascending)</option>
-                        <option value="desc">Distance (Descending)</option>
-                        <option value="rating">Rating (High to Low)</option>
-                    </select>
-
-                </div>
-            </div>
-            <div class="coordinate-inputs">
-                <label for="lat-input">Latitude:</label>
-                <input type="number" id="lat-input" placeholder="Enter latitude" step="any">
-                <label for="lon-input">Longitude:</label>
-                <input type="number" id="lon-input" placeholder="Enter longitude" step="any">
-            </div>
-            <div id="answer-box"></div>
+      <div class="search-section">
+        <div class="search-box">
+          <i class="fas fa-search search-icon"></i>
+          <input placeholder="Search for your ideal trip (e.g., family vacation hot tub)" id="filter-text-val" />
+          <button id="search-button" onclick="filterText()">Search</button>
         </div>
+
+        <div class="filters">
+          <label for="unit-toggle">Distance Unit:</label>
+          <select id="unit-toggle">
+            <option value="km" selected>Metric (km)</option>
+            <option value="mi">Imperial (miles)</option>
+          </select>
+
+          <label for="sort-toggle">Sort by:</label>
+          <select id="sort-toggle">
+            <option value="default" selected>Relevance</option>
+            <option value="asc">Distance (Ascending)</option>
+            <option value="desc">Distance (Descending)</option>
+            <option value="rating">Rating (High to Low)</option>
+          </select>
+        </div>
+      </div>
+      <div class="coordinate-inputs">
+        <label for="lat-input">Latitude:</label>
+        <input type="number" id="lat-input" placeholder="Enter latitude" step="any" />
+        <label for="lon-input">Longitude:</label>
+        <input type="number" id="lon-input" placeholder="Enter longitude" step="any" />
+      </div>
+
+      <!-- Add a session ID display for debugging -->
+      <div class="session-info">
+        <p>Session ID: <span id="session-id"></span></p>
+        <p class="feedback-explanation">
+          Help us improve your results by using thumbs up/down on hotels that
+          match or don't match your preferences!
+        </p>
+      </div>
+
+      <div id="answer-box"></div>
     </div>
+  </div>
 
-    <!--
-<body>
-    <div class="full-body-container">
-        <div class="top-text">
-            <div class="google-colors">
-                <h1 id="google-4">4</h1>
-                <h1 id="google-3">3</h1>
-                <h1 id="google-0-1">0</h1>
-                <h1 id="google-0-2">0</h1>
-            </div>
-            <div class="search-container">
-                <div class="input-box">
-                    <img src="{{ url_for('static', filename='images/mag.png') }}" />
-                     Updated placeholder to reflect hotel search 
-                    <input placeholder="Search for hotels (e.g., family vacation hot tub)" id="filter-text-val" />
-                </div>
-                <button id="search-button" onclick="filterText()">Search</button>
-            </div>
-        </div>
-        <div style="text-align: center; margin-bottom: 10px;">
-            <label for="unit-toggle">Distance Unit:</label>
-            <select id="unit-toggle" onchange="filterText()">
-                <option value="km" selected>Metric (km)</option>
-                <option value="mi">Imperial (miles)</option>
-            </select>
-        </div>
-        <div style="text-align: center; margin-bottom: 10px;">
-            <label for="sort-toggle">Sort by Distance:</label>
-            <select id="sort-toggle" onchange="filterText()">
-                <option value="default" selected>Relevance</option>
-                <option value="asc">Distance (Ascending)</option>
-                <option value="desc">Distance (Descending)</option>
-            </select>
-        </div>
-        <div style="text-align: center; margin-bottom: 10px;">
-            <label for="lat-input">Latitude:</label>
-            <input type="number" id="lat-input" placeholder="Enter latitude" step="any">
-            <label for="lon-input">Longitude:</label>
-            <input type="number" id="lon-input" placeholder="Enter longitude" step="any">
-        </div>
-        <div id="answer-box"></div>
-    </div> -->
+  <script>
+    // Generate a unique session ID
+    const sessionId =
+      "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    document.getElementById("session-id").textContent = sessionId;
 
-    <script>
-        let currentSession = null; // ✅ Store session ID
-    
-        function convertRatingToStars(ratingStr) {
-            if (!ratingStr || typeof ratingStr !== "string") return "No rating available";
-    
-            const wordToNum = {
-                'onestar': 1,
-                'twostar': 2,
-                'threestar': 3,
-                'fourstar': 4,
-                'all': 5
-            };
-    
-            const word = ratingStr.split("/")[0].toLowerCase().trim();
-            const numStars = wordToNum[word] || 0;
-    
-            return '★'.repeat(numStars) + '☆'.repeat(5 - numStars);
-        }
-    
-        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName, rating, index) {
-            description = description.replace(/^[Hh]otel[Dd]escription[#:\s]*/, '');
-            const facilityList = facilities.split(',').map(fac => `<span class="facility-tag">🛏️ ${fac.trim()}</span>`).join('');
-            
-            const feedbackButtons = `
-                <div class="feedback">
-                    <button onclick="sendFeedback(${index}, 'thumbs_up')">👍</button>
-                    <button onclick="sendFeedback(${index}, 'thumbs_down')">👎</button>
-                </div>`;
-    
-            return `
+    // Keep track of the current query
+    let currentQuery = "";
+
+    function convertRatingToStars(ratingStr) {
+      if (!ratingStr || typeof ratingStr !== "string")
+        return "No rating available";
+
+      const wordToNum = {
+        onestar: 1,
+        twostar: 2,
+        threestar: 3,
+        fourstar: 4,
+        all: 5,
+      };
+
+      const word = ratingStr.split("/")[0].toLowerCase().trim();
+      const numStars = wordToNum[word] || 0;
+
+      return "★".repeat(numStars) + "☆".repeat(5 - numStars);
+    }
+
+    function submitFeedback(hotelIndex, isRelevant) {
+      // Get the feedback buttons for this hotel
+      const thumbsUp = document.getElementById(`thumbs-up-${hotelIndex}`);
+      const thumbsDown = document.getElementById(`thumbs-down-${hotelIndex}`);
+
+      // Visual feedback - set active button
+      if (isRelevant) {
+        thumbsUp.classList.add("active");
+        thumbsDown.classList.remove("active");
+      } else {
+        thumbsDown.classList.add("active");
+        thumbsUp.classList.remove("active");
+      }
+
+      // Send feedback to server
+      fetch("/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query: currentQuery,
+          hotel_index: hotelIndex,
+          is_relevant: isRelevant,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("Feedback recorded successfully");
+            // Show toast notification
+            showToast("Feedback recorded! Future searches will be improved.");
+          } else {
+            console.error("Error recording feedback:", data.error);
+            showToast("Failed to record feedback. Please try again.", true);
+          }
+        })
+        .catch((error) => {
+          console.error("Error submitting feedback:", error);
+          showToast("Failed to record feedback. Please try again.", true);
+        });
+    }
+
+    function showToast(message, isError = false) {
+      // Remove existing toast if any
+      const existingToast = document.querySelector(".toast");
+      if (existingToast) {
+        existingToast.remove();
+      }
+
+      // Create and show new toast
+      const toast = document.createElement("div");
+      toast.className = isError ? "toast error" : "toast";
+      toast.textContent = message;
+      document.body.appendChild(toast);
+
+      // Show animation
+      setTimeout(() => toast.classList.add("show"), 10);
+
+      // Auto-remove after 3 seconds
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function answerBoxTemplate(
+      hotelName,
+      description,
+      facilities,
+      imageSearchLink,
+      cityName,
+      countyName,
+      rating,
+      hotelIndex
+    ) {
+      description = description.replace(/^[Hh]otel[Dd]escription[#:\s]*/, "");
+      const facilityList = facilities
+        .split(",")
+        .map((fac) => `<span class="facility-tag">🛏️ ${fac.trim()}</span>`)
+        .join("");
+
+      return `
                 <div class='hotel-card'>
                     <div class='hotel-header'>
                         <h3 class='hotel-name'>🏨 ${hotelName}</h3>
                         <p class='hotel-location'>📍 ${cityName}, ${countyName}</p>
-                        <p class='hotel-rating'>${convertRatingToStars(rating || "")}</p>
+                        <p class='hotel-rating'>${convertRatingToStars(
+        rating || ""
+      )}</p>
                     </div>
                     <div class='hotel-body'>
                         <p class='section-label'><strong>Description:</strong></p>
@@ -141,113 +188,118 @@
                             <a href="${imageSearchLink}" target="_blank">
                                 <button class='image-button'>See Hotel</button>
                             </a>
+                            <div class='feedback-container'>
+                                <span class='feedback-label'>Is this relevant to your search?</span>
+                                <button id='thumbs-up-${hotelIndex}' class='feedback-button' onclick='submitFeedback(${hotelIndex}, true)'>
+                                    <i class='fas fa-thumbs-up'></i>
+                                </button>
+                                <button id='thumbs-down-${hotelIndex}' class='feedback-button' onclick='submitFeedback(${hotelIndex}, false)'>
+                                    <i class='fas fa-thumbs-down'></i>
+                                </button>
+                            </div>
                         </div>
-                        ${feedbackButtons}
                     </div>
                 </div>
             `;
+    }
+
+    // Add event listener for pressing Enter key in the search box
+    document
+      .getElementById("filter-text-val")
+      .addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          filterText();
         }
-    
-        function filterText() {
-            document.getElementById("answer-box").innerHTML = "";
-    
-            const loadingDiv = document.createElement("div");
-            loadingDiv.textContent = "Searching for hotels...";
-            loadingDiv.style.textAlign = "center";
-            loadingDiv.style.padding = "20px";
-            document.getElementById("answer-box").appendChild(loadingDiv);
-    
-            const query = document.getElementById("filter-text-val").value;
-            const unit = document.getElementById("unit-toggle").value;
-            const sort = document.getElementById("sort-toggle").value;
-            const lat = document.getElementById("lat-input").value;
-            const lon = document.getElementById("lon-input").value;
-    
-            if (lat === "" || lon === "") {
-                alert("Please enter both latitude and longitude before searching.");
-                if (lat === "") document.getElementById("lat-input").style.border = "2px solid red";
-                if (lon === "") document.getElementById("lon-input").style.border = "2px solid red";
-                return;
-            }
-    
-            const params = { query, unit, sort, lat, lon };
-    
-            fetch("/hotels?" + new URLSearchParams(params).toString())
-                .then((response) => response.json())
-                .then((data) => {
-                    currentSession = data.session_id; // ✅ save session
-                    const results = data.results;
-                    document.getElementById("answer-box").innerHTML = "";
-    
-                    if (results.length === 0) {
-                        document.getElementById("answer-box").innerHTML =
-                            "<div style='text-align: center; padding: 20px;'>No hotels found matching your search criteria.</div>";
-                        return;
-                    }
-    
-                    results.forEach((row, index) => {
-                        const cardHtml = answerBoxTemplate(
-                            row.HotelName || "Hotel Name Not Available",
-                            row.Description || "No description available",
-                            row.HotelFacilities || "No facilities information available",
-                            row.imageSearchLink || "#",
-                            row.cityName || "Unknown City",
-                            row.countyName || "Unknown Country",
-                            row.HotelRating,
-                            index
-                        );
-                        const tempDiv = document.createElement("div");
-                        tempDiv.innerHTML = cardHtml;
-                        document.getElementById("answer-box").appendChild(tempDiv);
-                    });
-                })
-                .catch(error => {
-                    document.getElementById("answer-box").innerHTML =
-                        "<div style='text-align: center; padding: 20px; color: red;'>Error searching for hotels. Please try again.</div>";
-                    console.error("Search error:", error);
-                });
-        }
-    
-        function sendFeedback(index, feedbackType) {
-            fetch("/feedback", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    session_id: currentSession,
-                    index: index,
-                    feedback: feedbackType
-                })
-            })
-            .then((response) => response.json())
-            .then((data) => {
-                const results = data.results;
-                document.getElementById("answer-box").innerHTML = "";
-                results.forEach((row, index) => {
-                    const cardHtml = answerBoxTemplate(
-                        row.HotelName || "Hotel Name Not Available",
-                        row.Description || "No description available",
-                        row.HotelFacilities || "No facilities information available",
-                        row.imageSearchLink || "#",
-                        row.cityName || "Unknown City",
-                        row.countyName || "Unknown Country",
-                        row.HotelRating,
-                        index
-                    );
-                    const tempDiv = document.createElement("div");
-                    tempDiv.innerHTML = cardHtml;
-                    document.getElementById("answer-box").appendChild(tempDiv);
-                });
-            })
-            .catch((error) => console.error("Feedback error:", error));
-        }
-    
-        document.getElementById('filter-text-val').addEventListener('keypress', function (event) {
-            if (event.key === 'Enter') {
-                filterText();
-            }
+      });
+
+    function filterText() {
+      // Clear previous results
+      document.getElementById("answer-box").innerHTML = "";
+
+      // Show loading indicator
+      const loadingDiv = document.createElement("div");
+      loadingDiv.textContent = "Searching for hotels...";
+      loadingDiv.style.textAlign = "center";
+      loadingDiv.style.padding = "20px";
+      document.getElementById("answer-box").appendChild(loadingDiv);
+
+      // Get user input from text box
+      const query = document.getElementById("filter-text-val").value;
+      currentQuery = query; // Save current query for feedback
+
+      const unit = document.getElementById("unit-toggle").value;
+      const sort = document.getElementById("sort-toggle").value;
+      const lat = document.getElementById("lat-input").value;
+      const lon = document.getElementById("lon-input").value;
+
+      if (lat === "" || lon === "") {
+        document.getElementById("answer-box").innerHTML = "";
+        showToast(
+          "Please enter both latitude and longitude before searching.",
+          true
+        );
+        if (lat === "")
+          document.getElementById("lat-input").style.border = "2px solid red";
+        if (lon === "")
+          document.getElementById("lon-input").style.border = "2px solid red";
+        return;
+      } else {
+        document.getElementById("lat-input").style.border = "";
+        document.getElementById("lon-input").style.border = "";
+      }
+
+      console.log("Searching for:", query);
+
+      const params = {
+        query: query,
+        unit: unit,
+        sort: sort,
+        session_id: sessionId,
+      };
+
+      if (lat !== "" && lon !== "") {
+        params.lat = lat;
+        params.lon = lon;
+      }
+
+      fetch("/hotels?" + new URLSearchParams(params).toString())
+        .then((response) => response.json())
+        .then((data) => {
+          // Clear loading indicator
+          document.getElementById("answer-box").innerHTML = "";
+
+          if (data.length === 0) {
+            document.getElementById("answer-box").innerHTML =
+              "<div style='text-align: center; padding: 20px;'>No hotels found matching your search criteria.</div>";
+            return;
+          }
+
+          data.forEach((row) => {
+            let tempDiv = document.createElement("div");
+            // Match the keys from your Flask JSON response
+            tempDiv.innerHTML = answerBoxTemplate(
+              row.HotelName || "Hotel Name Not Available",
+              row.Description || "No description available",
+              row.HotelFacilities || "No facilities information available",
+              row.imageSearchLink || "#",
+              row.cityName || "Unknown City",
+              row.countyName || "Unknown Country",
+              row.HotelRating,
+              row.hotel_index
+            );
+            document.getElementById("answer-box").appendChild(tempDiv);
+          });
+
+          // Show success toast
+          showToast(`Found ${data.length} hotels matching your search!`);
+        })
+        .catch((error) => {
+          document.getElementById("answer-box").innerHTML =
+            "<div style='text-align: center; padding: 20px; color: red;'>Error searching for hotels. Please try again.</div>";
+          console.error("Search error:", error);
         });
-    </script>
-    
+    }
+  </script>
 </body>
 
 </html>
