@@ -3,12 +3,13 @@ import os
 import re
 import numpy as np
 from collections import Counter, defaultdict
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 from math import radians, cos, sin, asin, sqrt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
+import uuid
 
 os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..",os.curdir))
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +26,7 @@ STOPWORDS = {
     'hotel', 'room', 'rooms', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
     'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing'
 }
+session_feedback = {}
 
 with open(json_file_path, 'r', encoding='utf-8') as file:
     hotel_data = json.load(file)
@@ -87,13 +89,16 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * asin(sqrt(a))
     return R * c
 
-def apply_rocchio(query_vector, doc_vectors, similarities, top_k=5, alpha=1.0, beta=0.75):
-    top_indices = np.argsort(similarities)[-top_k:]
-    if len(top_indices) > 0:
-        relevant_mean = np.mean(doc_vectors[top_indices], axis=0)
-        modified_query = alpha * query_vector + beta * relevant_mean
-        return modified_query
-    return query_vector
+def apply_rocchio(session_id):
+    sf = session_feedback[session_id]
+    q0 = sf['query_vector']
+    D = doc_vectors
+    alpha, beta, gamma = 1.0, 0.75, 0.15
+    P = np.array([D[i] for i in sf['pos']]) if sf['pos'] else np.zeros_like(q0)
+    N = np.array([D[i] for i in sf['neg']]) if sf['neg'] else np.zeros_like(q0)
+    rp = P.mean(axis=0) if sf['pos'] else 0
+    rn = N.mean(axis=0) if sf['neg'] else 0
+    return alpha*q0 + beta*rp - gamma*rn
 
 def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="default", top_n=10):
     global hotels_df, vectorizer, svd_model, doc_vectors
@@ -182,14 +187,48 @@ def home():
 
 @app.route("/hotels", methods=['GET'])
 def hotels_search():
-    app.logger.info("Initializing hotel tokens")
-    app.logger.info("Processing search request")
-    text = request.args.get("query", "")
-    user_lat = request.args.get("lat", type=float)
-    user_lon = request.args.get("lon", type=float)
-    unit = request.args.get("unit", default="km")
-    sort_order = request.args.get("sort", default="default")
-    return json_search(text, user_lat=user_lat, user_lon=user_lon, unit=unit, sort_order=sort_order)
+    query = request.args.get("query", "")
+    lat = request.args.get("lat", type=float)
+    lon = request.args.get("lon", type=float)
+    unit = request.args.get("unit", "km")
+    sort_order = request.args.get("sort", "default")
+
+    processed_query = preprocess_text(query)
+    q_tfidf = vectorizer.transform([processed_query])
+    q_vector = svd_model.transform(q_tfidf)[0]
+
+    session_id = str(uuid.uuid4())
+    session_feedback[session_id] = {"query_vector": q_vector, "pos": set(), "neg": set()}
+
+    similarities = cosine_similarity(q_vector, doc_vectors)
+    hotels_df['similarity_score'] = similarities
+    top_results = hotels_df.sort_values(by='similarity_score', ascending=False).head(10)
+    results = top_results[['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName', 'similarity_score', 'HotelRating']].to_dict(orient='records')
+    return jsonify({"session_id": session_id, "results": results})
+
+@app.route("/feedback", methods=["POST"])
+def feedback():
+    data = request.get_json()
+    sid = data["session_id"]
+    idx = data["index"]
+    fb = data["feedback"]
+
+    if sid not in session_feedback:
+        return jsonify({"error": "invalid session"}), 400
+
+    if fb == "thumbs_up":
+        session_feedback[sid]["pos"].add(idx)
+        session_feedback[sid]["neg"].discard(idx)
+    elif fb == "thumbs_down":
+        session_feedback[sid]["neg"].add(idx)
+        session_feedback[sid]["pos"].discard(idx)
+
+    q_mod = apply_rocchio(sid)
+    similarities = cosine_similarity(q_mod, doc_vectors)
+    hotels_df['similarity_score'] = similarities
+    top_results = hotels_df.sort_values(by='similarity_score', ascending=False).head(10)
+    results = top_results[['HotelName', 'Description', 'HotelFacilities', 'cityName', 'countyName', 'similarity_score', 'HotelRating']].to_dict(orient='records')
+    return jsonify({ "session_id": sid, "results": results })
 
 @app.route("/episodes", methods=['GET'])
 def episodes_search():
