@@ -239,3 +239,9 @@ html {
   font-size: 14px;
   color: #000;
 }
+
+.hotel-rating {
+  font-size: 18px;
+  color: #f1c40f;
+  margin-top: 5px;
+}
