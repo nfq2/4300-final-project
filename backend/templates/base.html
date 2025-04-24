@@ -96,9 +96,11 @@
     </div> -->
 
     <script>
+        let currentSession = null; // ✅ Store session ID
+    
         function convertRatingToStars(ratingStr) {
             if (!ratingStr || typeof ratingStr !== "string") return "No rating available";
-
+    
             const wordToNum = {
                 'onestar': 1,
                 'twostar': 2,
@@ -106,18 +108,23 @@
                 'fourstar': 4,
                 'all': 5
             };
-
+    
             const word = ratingStr.split("/")[0].toLowerCase().trim();
             const numStars = wordToNum[word] || 0;
-
+    
             return '★'.repeat(numStars) + '☆'.repeat(5 - numStars);
         }
-        
-        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName, rating) {
+    
+        function answerBoxTemplate(hotelName, description, facilities, imageSearchLink, cityName, countyName, rating, index) {
             description = description.replace(/^[Hh]otel[Dd]escription[#:\s]*/, '');
-            const facilityList = facilities.split(',').map(fac => `<span class="facility-tag">🛏️ ${fac.trim()}</span>`)
-            .join('');
+            const facilityList = facilities.split(',').map(fac => `<span class="facility-tag">🛏️ ${fac.trim()}</span>`).join('');
             
+            const feedbackButtons = `
+                <div class="feedback">
+                    <button onclick="sendFeedback(${index}, 'thumbs_up')">👍</button>
+                    <button onclick="sendFeedback(${index}, 'thumbs_down')">👎</button>
+                </div>`;
+    
             return `
                 <div class='hotel-card'>
                     <div class='hotel-header'>
@@ -135,83 +142,62 @@
                                 <button class='image-button'>See Hotel</button>
                             </a>
                         </div>
+                        ${feedbackButtons}
                     </div>
                 </div>
             `;
         }
-
-        // Add event listener for pressing Enter key in the search box
-        document.getElementById('filter-text-val').addEventListener('keypress', function (event) {
-            if (event.key === 'Enter') {
-                filterText();
-            }
-        });
-
+    
         function filterText() {
-            // Clear previous results
             document.getElementById("answer-box").innerHTML = "";
-
-            // Show loading indicator
+    
             const loadingDiv = document.createElement("div");
             loadingDiv.textContent = "Searching for hotels...";
             loadingDiv.style.textAlign = "center";
             loadingDiv.style.padding = "20px";
             document.getElementById("answer-box").appendChild(loadingDiv);
-
-            // Get user input from text box
+    
             const query = document.getElementById("filter-text-val").value;
             const unit = document.getElementById("unit-toggle").value;
             const sort = document.getElementById("sort-toggle").value;
             const lat = document.getElementById("lat-input").value;
             const lon = document.getElementById("lon-input").value;
-
+    
             if (lat === "" || lon === "") {
                 alert("Please enter both latitude and longitude before searching.");
                 if (lat === "") document.getElementById("lat-input").style.border = "2px solid red";
                 if (lon === "") document.getElementById("lon-input").style.border = "2px solid red";
                 return;
-            } else {
-                document.getElementById("lat-input").style.border = "";
-                document.getElementById("lon-input").style.border = "";
             }
-
-            console.log("Searching for:", query);
-
-            const params = {
-                query: query,
-                unit: unit,
-                sort: sort
-            };
-
-            if (lat !== "" && lon !== "") {
-                params.lat = lat;
-                params.lon = lon;
-            }
-
+    
+            const params = { query, unit, sort, lat, lon };
+    
             fetch("/hotels?" + new URLSearchParams(params).toString())
                 .then((response) => response.json())
                 .then((data) => {
-                    // Clear loading indicator
+                    currentSession = data.session_id; // ✅ save session
+                    const results = data.results;
                     document.getElementById("answer-box").innerHTML = "";
-
-                    if (data.length === 0) {
+    
+                    if (results.length === 0) {
                         document.getElementById("answer-box").innerHTML =
                             "<div style='text-align: center; padding: 20px;'>No hotels found matching your search criteria.</div>";
                         return;
                     }
-
-                    data.forEach(row => {
-                        let tempDiv = document.createElement("div");
-                        // Match the keys from your Flask JSON response
-                        tempDiv.innerHTML = answerBoxTemplate(
+    
+                    results.forEach((row, index) => {
+                        const cardHtml = answerBoxTemplate(
                             row.HotelName || "Hotel Name Not Available",
                             row.Description || "No description available",
                             row.HotelFacilities || "No facilities information available",
                             row.imageSearchLink || "#",
                             row.cityName || "Unknown City",
                             row.countyName || "Unknown Country",
-                            row.HotelRating
+                            row.HotelRating,
+                            index
                         );
+                        const tempDiv = document.createElement("div");
+                        tempDiv.innerHTML = cardHtml;
                         document.getElementById("answer-box").appendChild(tempDiv);
                     });
                 })
@@ -221,21 +207,47 @@
                     console.error("Search error:", error);
                 });
         }
-
-        // let userLat = null;
-        // let userLon = null;
-
-        // navigator.geolocation.getCurrentPosition(
-        //     (position) => {
-        //         userLat = position.coords.latitude;
-        //         userLon = position.coords.longitude;
-        //         console.log("User location:", userLat, userLon);
-        //     },
-        //     (error) => {
-        //         console.error("Geolocation error:", error);
-        //     }
-        // );
+    
+        function sendFeedback(index, feedbackType) {
+            fetch("/feedback", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    session_id: currentSession,
+                    index: index,
+                    feedback: feedbackType
+                })
+            })
+            .then((response) => response.json())
+            .then((data) => {
+                const results = data.results;
+                document.getElementById("answer-box").innerHTML = "";
+                results.forEach((row, index) => {
+                    const cardHtml = answerBoxTemplate(
+                        row.HotelName || "Hotel Name Not Available",
+                        row.Description || "No description available",
+                        row.HotelFacilities || "No facilities information available",
+                        row.imageSearchLink || "#",
+                        row.cityName || "Unknown City",
+                        row.countyName || "Unknown Country",
+                        row.HotelRating,
+                        index
+                    );
+                    const tempDiv = document.createElement("div");
+                    tempDiv.innerHTML = cardHtml;
+                    document.getElementById("answer-box").appendChild(tempDiv);
+                });
+            })
+            .catch((error) => console.error("Feedback error:", error));
+        }
+    
+        document.getElementById('filter-text-val').addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                filterText();
+            }
+        });
     </script>
+    
 </body>
 
 </html>
