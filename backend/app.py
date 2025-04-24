@@ -32,6 +32,7 @@ STOPWORDS = {
     'hotel', 'room', 'rooms', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
     'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing'
 }
+session_feedback = {}
 
 with open(json_file_path, 'r', encoding='utf-8') as file:
     hotel_data = json.load(file)
