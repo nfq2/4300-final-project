@@ -134,8 +134,19 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
 
         results_df = results_df.sort_values('similarity_score', ascending=False)
         top_results = results_df.head(top_n)
+        if sort_order == 'rating':
+            rating_map = {
+                'OneStar': 1,
+                'TwoStar': 2,
+                'ThreeStar': 3,
+                'FourStar': 4,
+                'All': 5
+            }
+            top_results = top_results.copy()
+            top_results['numeric_rating'] = top_results['HotelRating'].map(rating_map).fillna(0)
+            top_results = top_results.sort_values('numeric_rating', ascending=False)
 
-        if sort_order in ['asc', 'desc'] and user_lat is not None and user_lon is not None:
+        elif sort_order in ['asc', 'desc'] and user_lat is not None and user_lon is not None:
             top_results = top_results.sort_values('distance_km', ascending=(sort_order == 'asc'))
 
         if user_lat is not None and user_lon is not None:

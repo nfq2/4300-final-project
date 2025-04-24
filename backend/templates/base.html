@@ -27,17 +27,19 @@
 
                 <div class="filters">
                     <label for="unit-toggle">Distance Unit:</label>
-                    <select id="unit-toggle" onchange="filterText()">
+                    <select id="unit-toggle">
                         <option value="km" selected>Metric (km)</option>
                         <option value="mi">Imperial (miles)</option>
                     </select>
 
-                    <label for="sort-toggle">Sort by Distance:</label>
-                    <select id="sort-toggle" onchange="filterText()">
+                    <label for="sort-toggle">Sort by:</label>
+                    <select id="sort-toggle">
                         <option value="default" selected>Relevance</option>
                         <option value="asc">Distance (Ascending)</option>
                         <option value="desc">Distance (Descending)</option>
+                        <option value="rating">Rating (High to Low)</option>
                     </select>
+
                 </div>
             </div>
             <div class="coordinate-inputs">
