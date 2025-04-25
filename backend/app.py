@@ -9,8 +9,6 @@ import pandas as pd
 from math import radians, cos, sin, asin, sqrt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
-
-# Add these new imports
 from datetime import datetime
 import pickle
 
@@ -18,7 +16,6 @@ os.environ['ROOT_PATH'] = os.path.abspath(os.path.join("..",os.curdir))
 current_directory = os.path.dirname(os.path.abspath(__file__))
 json_file_path = os.path.join(current_directory, 'init.json')
 
-# Add feedback file path
 feedback_file_path = os.path.join(current_directory, 'user_feedback.pkl')
 
 STOPWORDS = {
@@ -38,11 +35,8 @@ with open(json_file_path, 'r', encoding='utf-8') as file:
     hotel_data = json.load(file)
     hotels_df = pd.DataFrame(hotel_data)
 
-# Add global user feedback dictionary
-# Structure: {query_text: {'relevant': [hotel_ids], 'non_relevant': [hotel_ids]}}
 user_feedback = {}
 
-# Load existing feedback if available
 if os.path.exists(feedback_file_path):
     try:
         with open(feedback_file_path, 'rb') as f:
@@ -106,43 +100,22 @@ def haversine(lat1, lon1, lat2, lon2):
     c = 2 * asin(sqrt(a))
     return R * c
 
-# Modified Rocchio algorithm to incorporate user feedback
 def apply_rocchio(query_vector, doc_vectors, similarities, query_text, alpha=1.0, beta=0.75, gamma=0.15, top_k=5):
-    """
-    Apply the Rocchio algorithm for query modification using relevance feedback.
-    
-    Parameters:
-    - query_vector: Original query vector
-    - doc_vectors: Document vectors matrix
-    - similarities: Current similarity scores
-    - query_text: The original text query (used to look up user feedback)
-    - alpha: Weight for original query (typically 1.0)
-    - beta: Weight for relevant documents (typically 0.75)
-    - gamma: Weight for non-relevant documents (typically 0.15)
-    - top_k: Number of top documents to consider if no explicit feedback
-    
-    Returns:
-    - Modified query vector
-    """
     modified_query = query_vector.copy()
     
-    # Check if we have explicit feedback for this query
     if query_text in user_feedback:
         feedback = user_feedback[query_text]
         
-        # Get relevant document indices
         relevant_indices = feedback.get('relevant', [])
         if relevant_indices:
             relevant_mean = np.mean(doc_vectors[relevant_indices], axis=0)
             modified_query += beta * relevant_mean
         
-        # Get non-relevant document indices
         non_relevant_indices = feedback.get('non_relevant', [])
         if non_relevant_indices:
             non_relevant_mean = np.mean(doc_vectors[non_relevant_indices], axis=0)
             modified_query -= gamma * non_relevant_mean
     else:
-        # If no explicit feedback, use top-k documents as pseudo-relevant
         top_indices = np.argsort(similarities)[-top_k:]
         if len(top_indices) > 0:
             relevant_mean = np.mean(doc_vectors[top_indices], axis=0)
@@ -163,7 +136,6 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
 
         initial_similarities = cosine_similarity(query_vector, doc_vectors)
 
-        # Apply Rocchio algorithm using feedback
         modified_query_vector = apply_rocchio(query_vector, doc_vectors, initial_similarities, query)
 
         similarities = cosine_similarity(modified_query_vector, doc_vectors)
@@ -187,7 +159,7 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
         results_df = hotels_df.copy()
         results_df['similarity_score'] = similarities
         results_df['distance_km'] = distances
-        results_df['hotel_index'] = results_df.index  # Store original index for feedback
+        results_df['hotel_index'] = results_df.index  
 
         results_df = results_df.sort_values('similarity_score', ascending=False)
         top_results = results_df.head(top_n)
@@ -224,7 +196,6 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
         if 'imageSearchLink' in top_results.columns:
             columns_to_include.append('imageSearchLink')
             
-        # Store query for session if provided
         if session_id:
             session_queries[session_id] = query
             
@@ -234,7 +205,6 @@ def json_search(query, user_lat=None, user_lon=None, unit="km", sort_order="defa
         print(f"Error in json_search: {str(e)}")
         return json.dumps({"error": str(e)})
 
-# Keep track of sessions and their queries
 session_queries = {}
 
 app = Flask(__name__)
@@ -266,33 +236,27 @@ def record_feedback():
         data = request.json
         query = data.get('query')
         hotel_index = data.get('hotel_index')
-        is_relevant = data.get('is_relevant')  # True for thumbs up, False for thumbs down
+        is_relevant = data.get('is_relevant')  
         
         if not query or hotel_index is None or is_relevant is None:
             return jsonify({"error": "Missing required data"}), 400
         
-        # Convert hotel_index to integer
         hotel_index = int(hotel_index)
         
-        # Initialize feedback for this query if not exists
         if query not in user_feedback:
             user_feedback[query] = {'relevant': [], 'non_relevant': []}
         
-        # Add feedback based on relevance
         if is_relevant:
             if hotel_index not in user_feedback[query]['relevant']:
                 user_feedback[query]['relevant'].append(hotel_index)
-            # Remove from non-relevant if it was there
             if hotel_index in user_feedback[query]['non_relevant']:
                 user_feedback[query]['non_relevant'].remove(hotel_index)
         else:
             if hotel_index not in user_feedback[query]['non_relevant']:
                 user_feedback[query]['non_relevant'].append(hotel_index)
-            # Remove from relevant if it was there
             if hotel_index in user_feedback[query]['relevant']:
                 user_feedback[query]['relevant'].remove(hotel_index)
         
-        # Save feedback to file
         with open(feedback_file_path, 'wb') as f:
             pickle.dump(user_feedback, f)
         
